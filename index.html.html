@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Birthday Mission For My Girl</title>
+    <style>
+        /* --- 全域樣式設定 --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #ffe3ec;
+            background-image: radial-gradient(#ffb6c1 10%, transparent 10%);
+            background-size: 30px 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(223, 114, 136, 0.2);
+            width: 95%;
+            max-width: 800px;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            transition: all 0.5s ease;
+            max-height: 98vh;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 1.8rem; }
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        h1 {
+            color: #d9455f;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #615557;
+            line-height: 1.8;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .btn {
+            background: #ff6b8b;
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 107, 139, 0.4);
+            transition: transform 0.2s, background 0.2s;
+            margin-top: 20px;
+            -webkit-appearance: none;
+        }
+
+        .btn:hover, .btn:active {
+            background: #ff4772;
+            transform: scale(1.05);
+        }
+
+        /* --- 頁面二：遊戲區域 --- */
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #d9455f;
+            font-size: 0.9rem;
+        }
+
+        #game-stage {
+            width: 100%;
+            height: 400px;          /* 💡 稍微把遊戲舞台長高一點，配合變大的角色 */
+            background: #fff0f3;
+            border: 2px solid #ffccd5;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .character {
+            position: absolute;
+            width: 85px;             /* 💡 角色寬度從 50px 放大到 85px */
+            height: 85px;            /* 💡 角色高度從 50px 放大到 85px */
+            background-size: contain;       
+            background-repeat: no-repeat;   
+            background-position: center;
+            transition: left 0.1s linear, top 0.1s linear;
+            will-change: left, top;
+        }
+
+        /* 玩家角色外觀 */
+        #player {
+            border-radius: 12px;             
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* 待捕捉目標外觀 */
+        .target {
+            border-radius: 12px;             
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        }
+
+        /* 實體虛擬方向盤 D-Pad 樣式 */
+        .d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 55px);
+            grid-template-rows: repeat(3, 55px);
+            gap: 5px;
+            justify-content: center;
+            margin: 20px auto 5px auto;
+            width: 175px;
+        }
+
+        .d-btn {
+            background: #ffccd5;
+            color: #d9455f;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            user-select: none;
+        }
+
+        .d-btn:active {
+            background: #ff6b8b;
+            color: white;
+            transform: scale(0.95);
+        }
+
+        .d-center {
+            background: transparent;
+            box-shadow: none;
+            cursor: default;
+        }
+
+        /* --- 頁面三：回憶相簿 --- */
+        .album {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .photo-card {
+            background: white;
+            border: 1px solid #ffccd5;
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .photo-card:hover, .photo-card:active {
+            transform: translateY(-5px) rotate(2deg);
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 280px;           /* 💡 回憶相簿也同步改為 280px 長方形囉！ */
+            object-fit: contain;     
+            background: #fafafa;     
+            border-radius: 8px;
+        }
+
+        .photo-hint {
+            background: #ff4772;
+            color: white;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+
+        .modal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 3px solid #ff6b8b;
+            padding: 30px;
+            border-radius: 16px;
+            z-index: 100;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            width: 80%;
+        }
+
+        /* --- 頁面四：感言長文頁面 --- */
+        .love-letter {
+            text-align: left;
+            max-width: 500px;
+            margin: 0 auto;
+            white-space: pre-line;
+            font-size: 1.1rem;
+            color: #555;
+            line-height: 2;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div id="page1" class="page active">
+            <p style="letter-spacing: 2px; color: #aaa; font-size: 0.8rem;">BIRTHDAY MISSION FOR MY GIRL</p>
+            <h1>小徐，親愛的，我愛你</h1>
+            <p>請收下這份來自溫蒂溫的愛。</p>
+            <p>在接收驚喜之前，妳得通過我的考驗：</p>
+            <p style="color: #d9455f; font-weight: bold;">「把離家出走的溫蒂溫們抓回來吧！」</p>
+            <button class="btn" onclick="nextPage(2); initGame();">任務開始</button>
+        </div>
+
+        <div id="page2" class="page">
+            <div class="game-info">
+                <div>任務：捕捉 6 個離家出走的溫蒂溫</div>
+                <div>捕捉成功：<span id="score">0</span> / 6</div>
+            </div>
+            
+            <div id="game-stage">
+                <div id="player" class="character"></div>
+            </div>
+
+            <div class="d-pad">
+                <div class="d-center"></div>
+                <button class="d-btn" id="btn-up">▲</button>
+                <div class="d-center"></div>
+                <button class="d-btn" id="btn-left">◀</button>
+                <div class="d-center"></div>
+                <button class="d-btn" id="btn-right">▶</button>
+                <div class="d-center"></div>
+                <button class="d-btn" id="btn-down">▼</button>
+                <div class="d-center"></div>
+            </div>
+            <p style="color:#aaa; font-size:0.8rem; margin-top:5px;">(電腦可用鍵盤WASD，平板點擊方向盤或在螢幕滑動皆可控制)</p>
+        </div>
+
+        <div id="page3" class="page">
+            <h1>寶寶真厲害！</h1>
+            <p>親愛的，妳已經證明你有資格進入我的內心，我愛你。</p>
+            <div class="photo-hint">我沒時間做照片的遊戲代碼，千萬別點照片!!!</div>
+            
+            <div class="album">
+                <div class="photo-card" onclick="showModal()">
+                    <img src="D9D1E1DD-BD65-4B32-861E-F917CA5BF139.jpg" alt="相簿照片1">
+                    <p>生日快樂小徐寶寶</p>
+                </div>
+                <div class="photo-card" onclick="showModal()">
+                    <img src="IMG_4688.jpg" alt="相簿照片2">
+                    <p>開心!開心!</p>
+                </div>
+                <div class="photo-card" onclick="showModal()">
+                    <img src="IMG_4268.jpg" alt="相簿照片3">
+                    <p>寶寶我舔一口</p>
+                </div>
+            </div>
+
+            <button class="btn" onclick="nextPage(4)" style="margin-top: 30px;">前往下一頁</button>
+
+            <div id="funny-modal" class="modal">
+                <h2 style="color: #d9455f; margin-bottom: 15px;">笨蛋就叫你不要按了</h2>
+                <p>靠邀我沒時間寫照片點開的程式碼啦 </p>
+                <button class="btn" onclick="closeModal()">抱歉小文寶寶，幫你素一口</button>
+            </div>
+        </div>
+
+        <div id="page4" class="page">
+            <h1>給親愛的小徐</h1>
+            <div class="love-letter">
+                雖然生活、課業都很忙碌，但我還是想用一個特別的方式陪妳度過520。
+                
+                這些想對妳說的話，就偷偷藏在最後這一頁ㄅ。
+                雖然我們很常吵架，但我想說的是:「有你在的每一天都很幸福喔」
+
+                我很常正話反說，講很難聽的話，對不起。
+                我知道讀懂我的心是一件很困難的事，謝謝你沒有放棄我和我們。
+
+                而且我總是故意說反話來激怒你、讓你生氣
+                對不起，辛苦你了，謝謝你。
+                
+                
+                我也常常因為有你的陪伴而感到幸福
+                謝謝你來愛我 我永遠愛你
+            </div>
+            <button class="btn" onclick="alert('謝謝點擊！快抱小溫！(づ′▽`)づ')">點擊領取溫蒂溫的擁抱</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 核心頁面切換 ---
+        function nextPage(pageNum) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(`page` + pageNum).classList.add('active');
+        }
+
+        // --- 遊戲邏輯與變數 ---
+        let player = { x: 0, y: 0, el: null, size: 85 };  /* 💡 邏輯大小同步放大到 85 */
+        let targets = [];
+        let score = 0;
+        const totalTargets = 6; 
+        const stage = document.getElementById('game-stage');
+        let stageWidth, stageHeight;
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        // 6 隻小動物照片檔名
+        const targetImages = [
+            'IMG_4689.png',
+            'IMG_4690.png',
+            'IMG_4691.png',
+            'IMG_4692.png',
+            'IMG_4693.png',
+            'IMG_4694.png'
+        ];
+
+        // 玩家主角照片檔名
+        const playerImage = 'IMG_4688.png';
+
+        function initGame() {
+            stageWidth = stage.offsetWidth;
+            stageHeight = stage.offsetHeight;
+
+            // 初始化玩家位置
+            player.el = document.getElementById('player');
+            player.x = stageWidth / 2 - player.size / 2;
+            player.y = stageHeight / 2 - player.size / 2;
+            
+            // 套用玩家照片
+            player.el.style.backgroundImage = `url('${playerImage}')`;
+            updatePlayerPosition();
+
+            // 生成 6 隻小動物並各自套用照片
+            for (let i = 0; i < totalTargets; i++) {
+                let targetEl = document.createElement('div');
+                targetEl.classList.add('character', 'target');
+                
+                // 套用個別小動物的照片
+                targetEl.style.backgroundImage = `url('${targetImages[i]}')`;
+                
+                let tx = Math.floor(Math.random() * (stageWidth - 100)) + 10;
+                let ty = Math.floor(Math.random() * (stageHeight - 100)) + 10;
+                
+                targetEl.style.left = tx + 'px';
+                targetEl.style.top = ty + 'px';
+                stage.appendChild(targetEl);
+                
+                targets.push({ el: targetEl, x: tx, y: ty, caught: false });
+            }
+            
+            // 綁定鍵盤與觸控監聽
+            window.addEventListener('keydown', handleKeyboard);
+            stage.addEventListener('touchstart', handleTouchStart, { passive: false });
+            stage.addEventListener('touchmove', handleTouchMove, { passive: false });
+            
+            // 綁定虛擬方向盤點擊事件
+            document.getElementById('btn-up').addEventListener('click', () => { player.y -= 35; updatePlayerPosition(); });
+            document.getElementById('btn-down').addEventListener('click', () => { player.y += 35; updatePlayerPosition(); });
+            document.getElementById('btn-left').addEventListener('click', () => { player.x -= 35; updatePlayerPosition(); });
+            document.getElementById('btn-right').addEventListener('click', () => { player.x += 35; updatePlayerPosition(); });
+
+            // 啟動小動物亂跑定時器
+            setInterval(moveTargetsRandomly, 1000);
+        }
+
+        function updatePlayerPosition() {
+            player.x = Math.max(0, Math.min(stageWidth - player.size, player.x));
+            player.y = Math.max(0, Math.min(stageHeight - player.size, player.y));
+            
+            player.el.style.left = player.x + 'px';
+            player.el.style.top = player.y + 'px';
+            checkCollisions();
+        }
+
+        function handleKeyboard(e) {
+            const key = e.key.toLowerCase();
+            const step = 25;
+            
+            if (key === 'w' || e.key === 'ArrowUp') player.y -= step;
+            if (key === 's' || e.key === 'ArrowDown') player.y += step;
+            if (key === 'a' || e.key === 'ArrowLeft') player.x -= step;
+            if (key === 'd' || e.key === 'ArrowRight') player.x += step;
+
+            updatePlayerPosition();
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }
+
+        function handleTouchMove(e) {
+            if (!touchStartX || !touchStartY) return;
+            e.preventDefault();
+
+            let touchEndX = e.touches[0].clientX;
+            let touchEndY = e.touches[0].clientY;
+
+            let deltaX = touchEndX - touchStartX;
+            let deltaY = touchEndY - touchStartY;
+
+            player.x += deltaX * 0.35;
+            player.y += deltaY * 0.35;
+
+            touchStartX = touchEndX;
+            touchStartY = touchEndY;
+
+            updatePlayerPosition();
+        }
+
+        function moveTargetsRandomly() {
+            if (!stage) return;
+            stageWidth = stage.offsetWidth;
+            stageHeight = stage.offsetHeight;
+            targets.forEach(t => {
+                if (!t.caught) {
+                    t.x += (Math.random() - 0.5) * 110;
+                    t.y += (Math.random() - 0.5) * 110;
+                    t.x = Math.max(10, Math.min(stageWidth - 100, t.x));
+                    t.y = Math.max(10, Math.min(stageHeight - 100, t.y));
+                    t.el.style.left = t.x + 'px';
+                    t.el.style.top = t.y + 'px';
+                }
+            });
+            checkCollisions();
+        }
+
+        function checkCollisions() {
+            targets.forEach(t => {
+                if (!t.caught) {
+                    let playerCenterX = player.x + player.size / 2;
+                    let playerCenterY = player.y + player.size / 2;
+                    let targetCenterX = t.x + player.size / 2;
+                    let targetCenterY = t.y + player.size / 2;
+
+                    // 💡 因為圖片變大，碰撞半徑從原本的 40 提高到 65，抓小動物時才會精準
+                    let dist = Math.hypot((playerCenterX - targetCenterX), (playerCenterY - targetCenterY));
+                    if (dist < 65) {
+                        t.caught = true;
+                        t.el.style.display = 'none';
+                        score++;
+                        document.getElementById('score').innerText = score;
+                        
+                        if (score === totalTargets) {
+                            window.removeEventListener('keydown', handleKeyboard);
+                            stage.removeEventListener('touchstart', handleTouchStart);
+                            stage.removeEventListener('touchmove', handleTouchMove);
+                            
+                            setTimeout(() => {
+                                alert('通關成功！寶寶你真棒!');
+                                nextPage(3);
+                            }, 300);
+                        }
+                    }
+                }
+            });
+        }
+
+        function showModal() {
+            document.getElementById('funny-modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('funny-modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
