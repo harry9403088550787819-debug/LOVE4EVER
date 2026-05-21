@@ -241,7 +241,7 @@
             <p>請收下這份來自溫蒂溫的愛。</p>
             <p>在接收驚喜之前，妳得通過我的考驗：</p>
             <p style="color: #d9455f; font-weight: bold;">「把離家出走的溫蒂溫們抓回來吧！」</p>
-            <button class="btn" onclick="nextPage(2); initGame();">任務開始</button>
+            <button class="btn" onclick="startTheGame()">任務開始</button>
         </div>
 
         <div id="page2" class="page">
@@ -279,11 +279,11 @@
                     <p>生日快樂小徐寶寶</p>
                 </div>
                 <div class="photo-card" onclick="showModal()">
-                    <img src="IMG_4688.JPG" alt="相簿照片2">
+                    <img src="IMG_4688.JPG" onerror="this.src='IMG_4688.png'; this.onerror=function(){this.src='IMG_4688.jpg'; this.onerror=function(){this.src='IMG_4688.PNG';}};" alt="相簿照片2">
                     <p>開心!開心!</p>
                 </div>
                 <div class="photo-card" onclick="showModal()">
-                    <img src="IMG_4268.JPG" alt="相簿照片3">
+                    <img src="IMG_4268.JPG" onerror="this.src='IMG_4268.png'; this.onerror=function(){this.src='IMG_4268.jpg'; this.onerror=function(){this.src='IMG_4268.PNG';}};" alt="相簿照片3">
                     <p>寶寶我舔一口</p>
                 </div>
             </div>
@@ -324,7 +324,14 @@
         // --- 核心頁面切換 ---
         function nextPage(pageNum) {
             document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-            document.getElementById(`page` + pageNum).classList.add('active');
+            const targetPage = document.getElementById(`page` + pageNum);
+            if (targetPage) targetPage.classList.add('active');
+        }
+
+        // --- 獨立啟動函式，保證不卡死開頭按鈕 ---
+        function startTheGame() {
+            nextPage(2);
+            setTimeout(initGame, 100);
         }
 
         // --- 遊戲邏輯與變數 ---
@@ -338,48 +345,38 @@
         let touchStartX = 0;
         let touchStartY = 0;
 
-        // 6 隻小動物照片檔名 (全面配合你的 GitHub 改大寫 PNG)
-        const targetImages = [
-            'IMG_4689.PNG',
-            'IMG_4690.PNG',
-            'IMG_4691.PNG',
-            'IMG_4692.PNG',
-            'IMG_4693.PNG',
-            'IMG_4694.PNG'
-        ];
-
-        // 玩家主角照片檔名 (全面配合你的 GitHub 改大寫 PNG)
+        // 同時嘗試大寫與小寫副檔名以防破圖
+        const targetImages = ['IMG_4689.PNG', 'IMG_4690.PNG', 'IMG_4691.PNG', 'IMG_4692.PNG', 'IMG_4693.PNG', 'IMG_4694.PNG'];
+        const targetImagesFallback = ['IMG_4689.png', 'IMG_4690.png', 'IMG_4691.png', 'IMG_4692.png', 'IMG_4693.png', 'IMG_4694.png'];
         const playerImage = 'IMG_4688.PNG';
+        const playerImageFallback = 'IMG_4688.png';
 
         function initGame() {
             try {
-                stageWidth = stage.offsetWidth;
-                stageHeight = stage.offsetHeight;
+                stageWidth = stage.offsetWidth || 350;
+                stageHeight = stage.offsetHeight || 400;
 
-                // 初始化玩家位置
                 player.el = document.getElementById('player');
                 player.x = stageWidth / 2 - player.size / 2;
                 player.y = stageHeight / 2 - player.size / 2;
                 
-                // 套用玩家照片與防錯背景色
+                // 套用玩家照片，如果大寫失敗會自動用小寫，完全沒圖會顯示美麗的粉紅基底色
                 player.el.style.backgroundColor = '#ff6b8b';
-                player.el.style.backgroundImage = `url('${playerImage}')`;
+                player.el.style.backgroundImage = `url('${playerImage}'), url('${playerImageFallback}'), url('IMG_4688.jpg')`;
                 updatePlayerPosition();
 
-                // 移除舊的目標(如果有)
                 document.querySelectorAll('.target').forEach(el => el.remove());
                 targets = [];
 
-                // 生成 6 隻小動物並各自套用照片
                 for (let i = 0; i < totalTargets; i++) {
                     let targetEl = document.createElement('div');
                     targetEl.classList.add('character', 'target');
                     
                     targetEl.style.backgroundColor = '#ffccd5';
-                    targetEl.style.backgroundImage = `url('${targetImages[i]}')`;
+                    targetEl.style.backgroundImage = `url('${targetImages[i]}'), url('${targetImagesFallback[i]}'), url('IMG_469${i+1}.jpg')`;
                     
-                    let tx = Math.floor(Math.random() * (stageWidth - 100)) + 10;
-                    let ty = Math.floor(Math.random() * (stageHeight - 100)) + 10;
+                    let tx = Math.floor(Math.random() * (Math.max(100, stageWidth - 100))) + 10;
+                    let ty = Math.floor(Math.random() * (Math.max(100, stageHeight - 100))) + 10;
                     
                     targetEl.style.left = tx + 'px';
                     targetEl.style.top = ty + 'px';
@@ -388,77 +385,66 @@
                     targets.push({ el: targetEl, x: tx, y: ty, caught: false });
                 }
                 
-                // 綁定鍵盤與觸控監聽
                 window.removeEventListener('keydown', handleKeyboard);
                 window.addEventListener('keydown', handleKeyboard);
                 
                 stage.addEventListener('touchstart', handleTouchStart, { passive: false });
                 stage.addEventListener('touchmove', handleTouchMove, { passive: false });
                 
-                // 綁定虛擬方向盤點擊事件
                 document.getElementById('btn-up').onclick = () => { player.y -= 35; updatePlayerPosition(); };
                 document.getElementById('btn-down').onclick = () => { player.y += 35; updatePlayerPosition(); };
                 document.getElementById('btn-left').onclick = () => { player.x -= 35; updatePlayerPosition(); };
                 document.getElementById('btn-right').onclick = () => { player.x += 35; updatePlayerPosition(); };
 
-                // 啟動小動物亂跑定時器
                 if(window.gameInterval) clearInterval(window.gameInterval);
                 window.gameInterval = setInterval(moveTargetsRandomly, 1000);
-            } catch (error) {
-                console.error("遊戲初始化錯誤，但我們強制推進：", error);
+            } catch (e) {
+                console.log("初始化有安全防護，繼續運行", e);
             }
         }
 
         function updatePlayerPosition() {
+            if(!stageWidth) return;
             player.x = Math.max(0, Math.min(stageWidth - player.size, player.x));
             player.y = Math.max(0, Math.min(stageHeight - player.size, player.y));
             
-            player.el.style.left = player.x + 'px';
-            player.el.style.top = player.y + 'px';
+            if(player.el) {
+                player.el.style.left = player.x + 'px';
+                player.el.style.top = player.y + 'px';
+            }
             checkCollisions();
         }
 
         function handleKeyboard(e) {
             const key = e.key.toLowerCase();
             const step = 25;
-            
             if (key === 'w' || e.key === 'ArrowUp') player.y -= step;
             if (key === 's' || e.key === 'ArrowDown') player.y += step;
             if (key === 'a' || e.key === 'ArrowLeft') player.x -= step;
             if (key === 'd' || e.key === 'ArrowRight') player.x += step;
-
             updatePlayerPosition();
         }
 
         function handleTouchStart(e) {
-            e.preventDefault();
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
         }
 
         function handleTouchMove(e) {
             if (!touchStartX || !touchStartY) return;
-            e.preventDefault();
-
             let touchEndX = e.touches[0].clientX;
             let touchEndY = e.touches[0].clientY;
-
-            let deltaX = touchEndX - touchStartX;
-            let deltaY = touchEndY - touchStartY;
-
-            player.x += deltaX * 0.35;
-            player.y += deltaY * 0.35;
-
+            player.x += (touchEndX - touchStartX) * 0.4;
+            player.y += (touchEndY - touchStartY) * 0.4;
             touchStartX = touchEndX;
             touchStartY = touchEndY;
-
             updatePlayerPosition();
         }
 
         function moveTargetsRandomly() {
             if (!stage) return;
-            stageWidth = stage.offsetWidth;
-            stageHeight = stage.offsetHeight;
+            stageWidth = stage.offsetWidth || stageWidth;
+            stageHeight = stage.offsetHeight || stageHeight;
             targets.forEach(t => {
                 if (!t.caught) {
                     t.x += (Math.random() - 0.5) * 110;
@@ -489,7 +475,6 @@
                         
                         if (score === totalTargets) {
                             if(window.gameInterval) clearInterval(window.gameInterval);
-                            
                             setTimeout(() => {
                                 alert('通關成功！寶寶你真棒!');
                                 nextPage(3);
@@ -500,13 +485,8 @@
             });
         }
 
-        function showModal() {
-            document.getElementById('funny-modal').style.display = 'block';
-        }
-
-        function closeModal() {
-            document.getElementById('funny-modal').style.display = 'none';
-        }
+        function showModal() { document.getElementById('funny-modal').style.display = 'block'; }
+        function closeModal() { document.getElementById('funny-modal').style.display = 'none'; }
     </script>
 </body>
 </html>
